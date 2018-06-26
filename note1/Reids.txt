@@ -1,0 +1,733 @@
+一 NoSQL的基础
+
+a. 关系式数据的优点
+    通用性和相对较高的性能
+    保证数据的一致性和原子性，根据事物管理器
+    数据的更新开销更小
+    发布时间久，相对成熟的案例
+
+b. 关系式数据库的缺点
+    批量数据的写入处理时有可能会发生冲突
+    为有数据更新的表做结构变更时效率低下
+    字段的不固定应用，无法固定使用的字段数量类型
+    无法实现对简单查询需要快速返回结果的处理，因为结构限制
+
+c.NoSQL (No SQL)
+    弥补关系式数据库的不足
+
+d.NoSQL 网站
+    nosql-database.org
+
+e. NoSQL特点
+  便于扩展和提升性能
+	垂直扩展，
+        水平扩展：集群
+  数据相对分散，数据与数据之间没有关联。
+  速度更快，绝大多数nosql都是工作在内存里
+  高可用，自身就可以实现故障转移
+
+f.NoSQL分类
+   1.面向键值得数据库 { key-value }键值就是变量，键就是变量值就是变量代表的值
+	存储速度较快。
+	临时性：存储在内存中，数据有可能丢失，如memcached
+	永久性：存储在硬盘中，数据不会丢失，如ROMA，FLSRE
+	兼具俩者。工作在内存中，瞒住条件是会将数据保存至硬盘，如REDIS
+
+  2.面向文档的数据库
+	可以使用复杂的查询条件
+	不定义表结构（可以向自定义的表结构一样使用）
+
+  3.面向列的数据库
+	一列为单位存储数据
+		修改大量行，少数列的数据库时，进行列的修改更新效率更高
+	高扩展性
+		即使数据增加也不会降低响应的速度，特别是写入速度（很稳定的速度）
+
+
+g.安装nosql数据库
+    make
+    make test 
+    make PREFIX=/usr/local/redis install
+
+
+   cd /usr/local/redis/
+   cd bin/
+   cp /usr/src/redis-3.0.3/redis.conf ./
+  [root@localhost bin]# pwd
+  /usr/local/redis/bin
+  [root@localhost bin]# ./redis-server redis.conf   #启动
+
+
+  [root@localhost bin]# vim redis.conf
+ 	37 daemonize yes    #不占有整个页面，将redis放进后台运行
+
+
+  [root@localhost bin]# ./redis-cli -h localhost -p 6379  #无密码登录
+
+二 操作命令
+
+#支持的数据类型
+	String 字符串类型
+	Hash 散列类型
+	List 双向队列类型
+	Set 集合类型
+	Zset 有序集合类型
+
+
+
+
+1. string 字符串类型
+	set   创建键
+        get   查看键
+	setnx 创建新键，若存在则放弃操作
+	mset  批量创建
+        mget  批量查看
+        getset 查看原值，设置新值
+	setrange 替换字符串
+	incr  +1
+	decr  -1
+	incrby +N
+	decrby +N
+	strlen 查看字符长度
+	del  删除字符
+	setex 设置生存周期
+	ttl  查看生存周期
+
+
+
+
+localhost:6379> get a
+"1111"
+localhost:6379> 
+localhost:6379> getset a 666
+"1111"
+localhost:6379> 
+localhost:6379> get a 
+"666"
+
+
+localhost:6379> get a
+"666"
+localhost:6379> setrange a 2 111
+(integer) 5
+localhost:6379> get a
+"66111"
+
+
+ 
+localhost:6379> set a3 1
+OK
+localhost:6379> incr a3
+(integer) 2
+localhost:6379> incr a3
+(integer) 3
+localhost:6379> incr a3
+(integer) 4
+localhost:6379> incr a3
+(integer) 5
+localhost:6379> get a3
+"5"
+
+
+
+localhost:6379> get a3
+"1"
+localhost:6379> 
+localhost:6379> 
+localhost:6379> incrby a3 10
+(integer) 11
+localhost:6379> incrby a3 10
+(integer) 21
+localhost:6379> incrby a3 10
+(integer) 31
+localhost:6379> get a3
+"31"
+
+
+
+
+
+
+2. hash 散列类型
+    hset   创建键
+    hget   查看键
+    hmset  批量创建键
+    hmget  批量查看键
+    hkeys  查看指定键对应的所有字段的名称
+    hvals  查看指定键对应的所有的值
+    hsetnx 创建键 防止覆盖
+    hexists 查看指定键是否存在
+    hgetall 查看指定键对应的所有字段和值
+    hdel    删除字段
+
+
+localhost:6379> hset h h1 111
+(integer) 0
+localhost:6379> hkeys h
+1) "h1"
+localhost:6379> hvals h
+1) "111"
+localhost:6379> hset h h2 222
+(integer) 1
+localhost:6379> hkeys h
+1) "h1"
+2) "h2"
+localhost:6379> hvals h
+1) "111"
+2) "222"
+
+
+
+localhost:6379> hget h h1  #查看单个
+"111"
+localhost:6379> hget h h2
+"222"
+
+
+localhost:6379> hmset h h3 333 h4 444
+OK
+localhost:6379> hkeys h
+1) "h1"
+2) "h2"
+3) "h3"
+4) "h4"
+localhost:6379> hvals h
+1) "111"
+2) "222"
+3) "333"
+4) "444"
+
+localhost:6379> hgetall h
+1) "h1"
+2) "111"
+3) "h2"
+4) "222"
+5) "h3"
+6) "333"
+7) "h4"
+8) "444"
+
+
+
+localhost:6379> hexists h h1
+(integer) 1      #有 为 1
+
+localhost:6379> hexists h h6
+(integer) 0    #无 为 0
+
+
+
+
+-----------------------
+
+3. list 双向队列/双向链表类型
+    lpush   创建队列
+    lrange  显示队列内容
+    linsert 插入指定内容(before 值)、
+    lset    替换指定内容
+    lpop    删除第一个数据
+    rpop    删除最后一个数据
+    lrem    删除重复的数据(指定目标)
+    
+
+
+
+
+localhost:6379> lrange d1 0 -1
+1) "4"
+2) "3"
+3) "hello"
+4) "2"
+5) "1"
+localhost:6379> 
+localhost:6379> 
+localhost:6379> 
+localhost:6379> 
+localhost:6379> linsert d1 before 1 '6666'
+(integer) 6
+localhost:6379> lrange d1 0 -1
+1) "4"
+2) "3"
+3) "hello"
+4) "2"
+5) "6666"
+6) "1"
+
+localhost:6379> lset d1 0 111
+OK
+localhost:6379> lrange d1 0 -1
+1) "111"
+2) "3"
+3) "hello"
+4) "2"
+5) "6666"
+6) "1"
+
+
+
+
+
+
+---------------------------------------------------------------
+4. set集合
+    sadd   创建集合
+    smembers  查看集合
+    srandmember  随机抽取
+    spop   随机删除
+    sismember  统计集合中元素个数
+
+    sunion   查看并集
+    sinter   查看交集
+    sdiff    查看差集
+            store   保存结果
+
+
+
+
+
+
+localhost:6379> sadd m1 1 2 3 4
+(integer) 4
+localhost:6379> smembers m1
+1) "1"
+2) "2"
+3) "3"
+4) "4"
+localhost:6379> scard m1
+(integer) 4
+localhost:6379> srandmember m1   #抽取随机数字
+"3"
+
+localhost:6379> spop m1   #随机删除
+"1"
+
+
+localhost:6379> smembers m1
+1) "2"
+localhost:6379> 
+localhost:6379> sismember m1 2   #判断2 是否在 m1
+(integer) 1
+localhost:6379> sismember m1 3   #判断3 是否在 m1
+(integer) 0
+
+
+
+localhost:6379> sadd m2 1 2 3 4
+(integer) 4
+localhost:6379> sadd m3 3 4 5 6
+(integer) 4
+localhost:6379> 
+localhost:6379> sunion m2 m3
+1) "1"
+2) "2"
+3) "3"
+4) "4"
+5) "5"
+6) "6"
+localhost:6379> 
+localhost:6379> sunionstore m4 m2 m3
+(integer) 6
+localhost:6379> smembers m4
+1) "1"
+2) "2"
+3) "3"
+4) "4"
+5) "5"
+6) "6"
+localhost:6379> 
+localhost:6379> sinter m2 m3
+1) "3"
+2) "4"
+localhost:6379> sinterstore m5 m2 m3
+(integer) 2
+localhost:6379> smembers m5
+1) "3"
+2) "4"
+localhost:6379> 
+localhost:6379> sdiff m2 m3
+1) "1"
+2) "2"
+localhost:6379> sdiff m3 m2
+1) "5"
+2) "6"
+
+
+-------------------------------------------------------
+5. zset有序集合
+    zadd     创建有序集合
+    zrange   查看集合
+    zrevrange  反向查看有序集合
+    zrangebyscore  查看指定分数区间的元素
+    zincrby 增加分值或创建新元素
+    zrank   返回指定元素的下标
+    zrevrank 返回指定元素的下标(分数从大到小排列)
+    zcount   返回指定分数区间内的元素个数
+    zremrangebyrank   删除下标在指定区间范围内的元素
+    zremrangebyscore  删除分数在指定区间范围内的元素
+
+
+
+
+
+
+localhost:6379> zadd test 1 aa 2 bb 3 cc
+(integer) 3
+localhost:6379> zrange test 0 -1
+1) "aa"
+2) "bb"
+3) "cc"
+localhost:6379> 
+localhost:6379> zrange test 0 -1 withscores
+1) "aa"
+2) "1"
+3) "bb"
+4) "2"
+5) "cc"
+6) "3"
+localhost:6379> 
+localhost:6379> 
+localhost:6379> zrevrange test 0 -1 withscores
+1) "cc"
+2) "3"
+3) "bb"
+4) "2"
+5) "aa"
+6) "1"
+localhost:6379> 
+localhost:6379> zrangebyscore test 2 3 withscores
+1) "bb"
+2) "2"
+3) "cc"
+4) "3"
+localhost:6379> 
+localhost:6379> 
+localhost:6379> zincrby test 4 dd
+"4"
+localhost:6379> zrange test 0 -1 withscores
+1) "aa"
+2) "1"
+3) "bb"
+4) "2"
+5) "cc"
+6) "3"
+7) "dd"
+8) "4"
+localhost:6379> 
+localhost:6379> zincrby test 4 dd
+"8"
+localhost:6379> zincrby test 4 dd
+"12"
+localhost:6379> zrange test 0 -1 withscores
+1) "aa"
+2) "1"
+3) "bb"
+4) "2"
+5) "cc"
+6) "3"
+7) "dd"
+8) "12"
+
+
+localhost:6379> zrank test dd
+(integer) 3
+localhost:6379> zrevrank test dd
+(integer) 0
+
+localhost:6379> zcount test 5 20
+(integer) 1
+
+localhost:6379> zremrangebyrank test 0 2
+(integer) 3
+localhost:6379> zrange test 0 -1 withscores
+1) "dd"
+2) "12"
+
+
+
+localhost:6379> zadd test2 1 a 2 b 3 c 4 d 55 e 66 f
+(integer) 6
+localhost:6379> zrange test2 0 -1 withscores
+ 1) "a"
+ 2) "1"
+ 3) "b"
+ 4) "2"
+ 5) "c"
+ 6) "3"
+ 7) "d"
+ 8) "4"
+ 9) "e"
+10) "55"
+11) "f"
+12) "66"
+localhost:6379> zremrangebyscore test2 3 60
+(integer) 3
+localhost:6379> zrange test2 0 -1 withscores
+1) "a"
+2) "1"
+3) "b"
+4) "2"
+5) "f"
+6) "66"
+
+
+
+
+------------------------------------------
+6. 补充
+   keys *  查看键列表
+   type 查看类型
+   expire 设置生存周期
+   exists  查看指定键是否存在
+   select  选择库(0-15)
+   move    移动数据
+   flushdb 清空当前库
+   flushall 清空所有库
+   info    查看服务器基本配置
+   dbsize  查看当前库中的键的数量
+
+
+localhost:6379> keys *
+ 1) "c"
+ 2) "w"
+ 3) "m4"
+ 4) "m1"
+ 5) "m5"
+localhost:6379> move m5 15
+(integer) 1
+localhost:6379> select 15
+OK
+localhost:6379[15]> keys *
+1) "m5"
+
+
+
+
+
+
+
+
+
+三 NoSQL应用
+
+a.密码认证
+
+[root@localhost bin]# pwd
+/usr/local/redis/bin
+[root@localhost bin]# vim redis.conf  #修改配置文件
+	391 requirepass 123456
+
+[root@localhost bin]# pkill redis  #结束进程
+[root@localhost bin]# ./redis-server redis.conf  #重启
+
+第一种登录方式：
+[root@localhost bin]# ./redis-cli
+127.0.0.1:6379> keys *
+(error) NOAUTH Authentication required.
+127.0.0.1:6379> auth 123456
+OK
+127.0.0.1:6379> exit
+
+第二种登录方式：
+[root@localhost bin]# ./redis-cli -a '123456'
+
+
+
+
+b. 备份
+持久化：
+   dir 备份文件的目录
+
+
+
+
+1. 查看
+[root@localhost ~]# /usr/local/redis/bin/redis-cli
+127.0.0.1:6379> auth 123456
+OK
+127.0.0.1:6379> keys *
+ 1) "test2"
+ 2) "test"
+ 3) "a2"
+ 4) "m4"
+ 5) "a1"
+ 6) "d1"
+ 7) "m1"
+ 8) "w"
+ 9) "h"
+10) "a"
+11) "m3"
+12) "c"
+13) "m2"
+127.0.0.1:6379> exit
+	
+
+2.
+[root@localhost ~]# pkill redis
+[root@localhost ~]# /usr/local/redis/bin/redis-server /usr/local/redis/bin/redis.conf  #启动
+
+
+3.
+[root@localhost ~]# /usr/local/redis/bin/redis-cli
+127.0.0.1:6379> auth 123456
+OK
+127.0.0.1:6379> keys *
+(empty list or set)
+
+
+4.
+[root@localhost ~]# cd /usr/local/redis/
+[root@localhost redis]# ls
+bin
+[root@localhost redis]# cd bin/
+[root@localhost bin]# ls
+dump.rdb         redis-check-aof   redis-cli   redis-sentinel
+redis-benchmark  redis-check-dump  redis.conf  redis-server
+[root@localhost bin]# pkill redis
+[root@localhost bin]# ./redis-server redis.conf  
+[root@localhost bin]# ./redis-cli -a 123456
+127.0.0.1:6379> keys *
+ 1) "m3"
+ 2) "m2"
+ 3) "a"
+ 4) "test"
+ 5) "test2"
+ 6) "a2"
+ 7) "m1"
+ 8) "h"
+ 9) "w"
+10) "c"
+11) "a1"
+12) "d1"
+13) "m4"
+127.0.0.1:6379> exit
+
+
+5.
+[root@localhost bin]# pwd
+/usr/local/redis/bin
+[root@localhost bin]# ll
+总用量 15500
+-rw-r--r-- 1 root root dump.rdb   #dump.db 是redis备份之一。dump记录所有创建的键。只有在dump.db所在目录下，启动服务，才能进行下载上
+
+
+6.无从从哪个目录登录，都能加载到备份文件
+
+[root@localhost bin]# vim redis.conf 
+	187 dir /usr/local/redis/bin   #dir 备份文件的目录
+
+[root@localhost bin]# pkill redis
+
+7.测试
+[root@localhost ~]# rm -rf dump.rdb 
+[root@localhost ~]# /usr/local/redis/bin/redis-server /usr/local/redis/bin/redis.conf 
+[root@localhost ~]# /usr/local/redis/bin/redis-cli 
+
+
+
+
+
+c. 主从配置
+
+
+
+1.准备
+[root@localhost ~]# cd /usr/local/redis/
+[root@localhost redis]# cd ..
+[root@localhost local]# ls
+bin  etc  games  include  lib  lib64  libexec  redis  sbin  share  src
+[root@localhost local]# pwd
+/usr/local
+[root@localhost local]# ll
+drwxr-xr-x  3 root root 4096 5月  25 20:08 redis
+
+[root@localhost local]# cp -rp redis redis-slave
+
+
+
+2.配置
+
+[root@localhost local]# cd redis  #主服务器
+[root@localhost redis]# ls
+bin
+[root@localhost redis]# cd bin/
+[root@localhost bin]# ls
+redis-benchmark  redis-check-aof  redis-check-dump  redis-cli  redis.conf  redis-sentinel  redis-server
+[root@localhost bin]# vim redis.conf    #修改配置文件
+ 	41 pidfile /usr/local/redis/redis.pid
+
+
+[root@localhost redis]# cd /usr/local/     #从服务器
+[root@localhost local]# ls
+bin  etc  games  include  lib  lib64  libexec  redis  redis-slave  sbin  share  src
+[root@localhost local]# cd redis-slave/
+[root@localhost redis-slave]# ls
+bin
+[root@localhost redis-slave]# cd bin/
+[root@localhost bin]# vim redis.conf    #修改配置文件
+	41 pidfile /usr/local/redis-slave/redis.pid
+	45 port 6380
+	187 dir /usr/local/redis-slave/bin
+
+	205 slaveof 192.168.10.10 6379
+	212 masterauth 123456
+	391 #requirepass 123456  #注释掉
+
+
+3.重启服务
+[root@localhost ~]# cd /usr/local/
+[root@localhost local]# ls
+bin  etc  games  include  lib  lib64  libexec  redis  redis-slave  sbin  share  src
+[root@localhost local]# cd redis/bin/
+[root@localhost bin]# ls
+redis-benchmark  redis-check-aof  redis-check-dump  redis-cli  redis.conf  redis-sentinel  redis-server
+[root@localhost bin]# ./redis-server redis.conf  #主服务器
+
+[root@localhost bin]# netstat -antp
+Proto Recv-Q Send-Q Local Address     Foreign Address     State    PID/Program name       
+tcp        0      0 0.0.0.0:6379      0.0.0.0:*           LISTEN   32062/redis-server  
+
+
+[root@localhost bin]# cd ../..
+[root@localhost local]# ls
+bin  etc  games  include  lib  lib64  libexec  redis  redis-slave  sbin  share  src
+[root@localhost local]# cd redis-slave/bin/
+[root@localhost bin]# ls
+redis-benchmark  redis-check-aof  redis-check-dump  redis-cli  redis.conf  redis-sentinel  redis-server
+[root@localhost bin]# ./redis-server redis.conf 
+[root@localhost bin]# netstat -antp
+Proto Recv-Q Send-Q Local Address               Foreign Address             State       PID/Program name      
+tcp        0      0 0.0.0.0:6379                0.0.0.0:*                   LISTEN      32062/redis-server  
+tcp        0      0 0.0.0.0:6380                0.0.0.0:*                   LISTEN      32172/./redis-serve
+
+
+
+
+4.测试
+
+[root@localhost bin]# ./redis-cli -h 192.168.10.10 -p 6379    #主服务器
+192.168.10.10:6379> auth 123456
+OK
+192.168.10.10:6379> keys *
+1) "wwwww"
+2) "h"
+3) "a"
+4) "sss1"
+192.168.10.10:6379> 
+192.168.10.10:6379> sadd test1  111111111111111
+(integer) 1
+192.168.10.10:6379> exit
+
+
+
+[root@localhost bin]# ./redis-cli -h 192.168.10.10 -p 6380  #从服务器
+192.168.10.10:6380> keys *
+1) "h"
+2) "a"
+3) "sss1"
+4) "test1"
+5) "wwwww"
+192.168.10.10:6380> sadd test2 2222222222
+(error) READONLY You can't write against a read only slave.       #从服务器，只能读，不能写
+
+
+
