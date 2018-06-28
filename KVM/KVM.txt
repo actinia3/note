@@ -1,0 +1,218 @@
+全虚拟化
+	操作系统 
+
+半虚拟化
+	虚拟化管理程序 
+
+
+KVM:
+依赖HVM机制（VMWARE CPU第二选项）
+
+	Intel： VT-X    vmx   kvm-intel
+	AMD:    AMD-V   svm   kvm-amd
+	
+	查看是否支持：
+	[root@localhost ~]# cat /proc/cpuinfo | grep vmx
+	[root@localhost ~]# cat /proc/cpuinfo | grep svm
+
+
+	虚拟机用户空间：guestOS执行非I/O类操作，来宾-用户
+	虚拟机内核空间：guestOS执行I/0类操作或其他特权指令，来宾-内核
+	
+	宿主机用户空间：guestOS请求I/0类操作，用户模式或dom0
+	宿主机内核空间：内核模式，hypervisor
+
+	kvm+qemu 
+		/dev/kvm 
+			创建VM(VCPU、MEM)
+		
+			qemu-kvm 
+		qemu 
+			用户空间，模拟VM的I/O设备
+
+	特性：
+		1、内存管理 
+			page 4K 
+			HUGE PAGE 
+			
+		2、CPU管理			
+			KSM 内核相同页面合并技术 
+		
+			功能：合并内核中相同的代码，减少系统冗余数据
+
+		3、硬件支持
+			取决于LINUX内核
+		4、存储
+			本地存储
+			透传技术 
+			网络附加存储NAS
+			存储区域网络SAN			
+			分布式存储 
+				glusterFS
+		5、实时迁移
+			前提要有 共享存储
+		6、操作系统
+			Linux Windows OPenBSD等X86
+
+
+------------------------------------------------------------------------------------
+KVM工具栈
+	虚拟机启动、创建、删除等管理操作
+
+	VMM:虚拟机管理器，GUI
+		virt-manager:管理虚拟机，启动、停止等
+		virt-viewer：查看虚拟机工具
+		virtinst：CLI
+	
+	libvirt：KVM的辅助管理工具
+
+	virsh:
+		基于C/S架构，让用户远程连接和管理libvirt进程的命令工具
+	qemu:
+		qemu-kvm 提供管理KVM的工具
+		qemu-img 管理虚拟机磁盘映像文件的工具
+		qemu-io 管理虚拟机I/O设备的。
+
+------------------------------------------------------------------------------------
+
+
+安装：
+
+	查看是否支持：
+	modinfo kvm
+	或者
+	grep -E --color=auto "(vmx|svm)" /proc/cpuinfo
+	
+
+	yum -y install libvirt
+	systemctl restart libvirtd
+	
+	yum -y install virt-manager virt-viewer virt-install
+	
+	virt-manager
+
+
+
+#kernel 具有路由转发功能。用它连接 物理网卡和物理机虚拟网卡
+
+
+
+
+
+混杂模式，所谓的 桥接模式
+
+	在物理网卡上，虚拟出一个交换机。然后，通过这些不同的虚拟借口，对应不同的虚拟机，进行通信
+
+
+
+1.配置虚拟网卡
+ cp -a  ifcfg-ens33 ifcfg-br0
+
+vi ifcfg-br0 
+TYPE=Bridge   #1
+BOOTPROTO=static
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+DEVICE=br0  #2
+NBOOT=yes  #3
+IPADDR=192.168.26.143
+
+
+vi ifcfg-enss
+TYPE=Ethernet
+BRIDGE=br0   #1
+BOOTPROTO=none  #2
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=ens33
+UUID=35cc4ccd-c30a-4243-a2b3-198e2939884c
+DEVICE=ens33
+ONBOOT=yes  #3
+
+
+[root@localhost network-scripts]# ifconfig
+br0: 
+        inet 192.168.26.143  netmask 255.255.255.0  broadcast 192.168.26.255
+       
+
+ens33: 
+	没有IP
+
+
+
+
+
+2. virt-manager 打开虚拟系统管理器
+
+	进行系统配置
+3. 进行 ping 测试
+
+---------------------------------------
+脚本安装
+
+
+
+1. 关闭防墙和selinux
+
+2. vim /etc/libvirt/qemu.conf 
+
+240 user = "root"
+244 group = "root"
+249 dynamic_ownership = 0  #都使用root身份
+
+3.重启
+systemctl restart libvirtd
+
+4.安装前的准备
+[root@localhost ~]# qemu-img create -f raw /root/centos6.5.raw 10G
+Formatting '/root/centos6.5.raw', fmt=raw size=10737418240
+[root@localhost ~]# ls
+	centos6.5.raw    
+
+[root@localhost ~]# virt-install --virt-type kvm --name C7 --ram 512 --cdrom=/usr/src/CentOS-6.8-x86_64-bin-DVD1.iso --disk path=/root/centos6.5.raw --network bridge=br0 --graphics vnc,listen=0.0.0.0 --noautoconsole --os-type=linux --os-variant=centos6.5
+
+开始安装......
+创建域......                                                                                   |    0 B  00:00:00     
+域安装仍在进行。您可以重新连接
+到控制台以便完成安装进程。
+
+
+5.安装
+
+虚拟机系统管理器 --> QEMU/KVM --> 点击C7 --> 安装
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
