@@ -1,0 +1,13 @@
+ 21  wget ftp://192.168.26.253/ftp.repo
+
+   24  rm  -rf  index.html 
+   27  yum clean all
+   28  yum makecache
+   29  yum  -y  install lrzsz
+
+
+ 49  systemctl status firewalld.service
+ 50  systemctl disable firewalld.service
+ 51  systemctl status iptables.service
+ 52  vim /etc/selinux/config 
+ 53  sync
